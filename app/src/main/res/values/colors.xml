@@ -3,4 +3,6 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="mbgcolor">#121A1E</color>
+    <color name="cardcolor">#202E35</color>
+    <color name="datecolor">#E1E1E1</color>
 </resources>
