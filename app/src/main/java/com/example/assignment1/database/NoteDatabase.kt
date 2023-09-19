@@ -6,6 +6,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
+import com.example.assignment1.dao.NoteDao
 import com.example.assignment1.models.Note
 
 @Database(
@@ -15,6 +16,9 @@ import com.example.assignment1.models.Note
 )
 @TypeConverters(com.example.assignment1.converters.TypeConverter::class)
 abstract class NoteDatabase : RoomDatabase(){
+
+    abstract val noteDao : NoteDao
+
     companion object {
         @Volatile
         private var INSTANCE: NoteDatabase? = null
