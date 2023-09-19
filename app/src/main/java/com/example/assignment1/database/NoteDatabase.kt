@@ -27,7 +27,7 @@ abstract class NoteDatabase : RoomDatabase(){
                 return INSTANCE ?: Room.databaseBuilder(
                     context.applicationContext,
                     NoteDatabase::class.java,
-                    "task_db"
+                    "note_db"
                 ).build().also {
                     INSTANCE = it
                 }

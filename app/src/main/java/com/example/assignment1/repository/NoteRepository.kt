@@ -8,12 +8,24 @@ import com.example.assignment1.utils.Resource
 import com.example.assignment1.utils.Resource.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlin.Exception
 
 class NoteRepository(application: Application) {
 
     private val noteDao = NoteDatabase.getInstance(application).noteDao
+
+    fun getNoteList() = flow{
+        emit(Loading())
+        try {
+            val result = noteDao.getNoteList()
+            emit(Success(result))
+        }catch (e: Exception){
+            emit(Error(e.message.toString()))
+        }
+
+    }
 
     fun insertTask(note: Note) = MutableLiveData<Resource<Long>>().apply {
 

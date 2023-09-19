@@ -8,11 +8,24 @@ import android.text.TextWatcher
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.lifecycle.ViewModelProvider
+import com.example.assignment1.adapters.NoteRecyclerViewAdapter
 import com.example.assignment1.databinding.ActivityMainBinding
+import com.example.assignment1.models.Note
+import com.example.assignment1.utils.Status
+import com.example.assignment1.utils.clearEditText
+import com.example.assignment1.utils.longToastShow
 import com.example.assignment1.utils.setupDialog
 import com.example.assignment1.utils.validateEditText
+import com.example.assignment1.viewmodels.NoteViewModel
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import java.util.Date
+import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,9 +50,20 @@ class MainActivity : AppCompatActivity() {
             setupDialog(R.layout.loading_dialog)
         }
     }
+
+    private val noteViewModel : NoteViewModel by lazy {
+        ViewModelProvider(this)[NoteViewModel::class.java]
+    }
+
+    private val noteRecyclerViewAdapter : NoteRecyclerViewAdapter by lazy {
+        NoteRecyclerViewAdapter()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(mainBinding.root)
+
+        mainBinding.noteRV.adapter = noteRecyclerViewAdapter
 
         // Adding note
         val addCloseImg = addNoteDialog.findViewById<ImageView>(R.id.closeImg)
@@ -68,6 +92,8 @@ class MainActivity : AppCompatActivity() {
 
 
         mainBinding.addNoteFABtn.setOnClickListener {
+            clearEditText(addENTitle, addENTitleL)
+            clearEditText(addENDesc, addENDescL)
             addNoteDialog.show()
         }
 
@@ -77,8 +103,33 @@ class MainActivity : AppCompatActivity() {
                 && validateEditText(addENDesc, addENDescL)
             ) {
                 addNoteDialog.dismiss()
-                Toast.makeText(this, "Validated!", Toast.LENGTH_LONG).show()
-                loadingDialog.show()
+                //Toast.makeText(this, "Validated!", Toast.LENGTH_LONG).show()
+                //loadingDialog.show()
+
+                val newNote = Note(
+                    UUID.randomUUID().toString(),
+                    addENTitle.text.toString().trim(),
+                    addENDesc.text.toString().trim(),
+                    Date()
+                )
+                noteViewModel.insertTask(newNote).observe(this){
+                    when(it.status){
+                        Status.LOADING -> {
+                            loadingDialog.show()
+                        }
+                        Status.SUCCESS ->{
+                            loadingDialog.dismiss()
+                            if (it.data?.toInt() != -1) {
+                                longToastShow(msg = "Note Added!")
+                            }
+                        }
+                        Status.ERROR -> {
+                            loadingDialog.dismiss()
+                            it.message?.let { it1 -> longToastShow(it1) }
+
+                        }
+                    }
+                }
             }
         }
 
@@ -116,5 +167,36 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        //update note -------ends
+
+        callGetNoteList()
+
+    }
+
+    private fun callGetNoteList() {
+        loadingDialog.show()
+        CoroutineScope(Dispatchers.Main).launch {
+
+            noteViewModel.getNoteList().collect {
+                when (it.status) {
+                    Status.LOADING -> {
+                        loadingDialog.show()
+                    }
+
+                    Status.SUCCESS -> {
+                        it.data?.collect {noteList ->
+                            loadingDialog.dismiss()
+                            noteRecyclerViewAdapter.addAllNote(noteList)
+                        }
+                    }
+
+                    Status.ERROR -> {
+                        loadingDialog.dismiss()
+                        it.message?.let { it1 -> longToastShow(it1) }
+
+                    }
+                }
+            }
+        }
     }
 }
