@@ -55,15 +55,13 @@ class MainActivity : AppCompatActivity() {
         ViewModelProvider(this)[NoteViewModel::class.java]
     }
 
-    private val noteRecyclerViewAdapter : NoteRecyclerViewAdapter by lazy {
-        NoteRecyclerViewAdapter()
-    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(mainBinding.root)
 
-        mainBinding.noteRV.adapter = noteRecyclerViewAdapter
+
 
         // Adding note
         val addCloseImg = addNoteDialog.findViewById<ImageView>(R.id.closeImg)
@@ -157,23 +155,82 @@ class MainActivity : AppCompatActivity() {
         editCloseImg.setOnClickListener { updateNoteDialog.dismiss() }
 
         val editNoteBtn = updateNoteDialog.findViewById<Button>(R.id.saveEditNoteBtn)
-        editNoteBtn.setOnClickListener {
-            if (validateEditText(upENTitle, upENTitleL)
-                && validateEditText(upENDesc, upENDescL)
-            ) {
-                updateNoteDialog.dismiss()
-                Toast.makeText(this, "Validated!", Toast.LENGTH_LONG).show()
-                loadingDialog.show()
-            }
-        }
 
         //update note -------ends
 
-        callGetNoteList()
+       val noteRecyclerViewAdapter = NoteRecyclerViewAdapter{ type, position, note ->
+           if(type == "delete") {
+               noteViewModel
+                   .deleteNote(note)
+                   .observe(this) {
+                       when (it.status) {
+                           Status.LOADING -> {
+                               loadingDialog.show()
+                           }
+
+                           Status.SUCCESS -> {
+                               loadingDialog.dismiss()
+                               if (it.data?.toInt() != -1) {
+                                   longToastShow(msg = "Note Deleted!")
+                               }
+                           }
+
+                           Status.ERROR -> {
+                               loadingDialog.dismiss()
+                               it.message?.let { it1 -> longToastShow(it1) }
+
+                           }
+                       }
+                   }
+              }else if(type == "update"){
+                  upENTitle.setText(note.title)
+                  upENDesc.setText(note.description)
+                  editNoteBtn.setOnClickListener {
+                       if (validateEditText(upENTitle, upENTitleL)
+                           && validateEditText(upENDesc, upENDescL)
+                       ) {
+                           val updateNote = Note(
+                               note.id,
+                               upENTitle.text.toString().trim(),
+                               upENDesc.text.toString().trim(),
+                               Date()
+                           )
+                           updateNoteDialog.dismiss()
+                           loadingDialog.show()
+                           noteViewModel
+                               .updateNote(updateNote)
+                               .observe(this) {
+                                   when (it.status) {
+                                       Status.LOADING -> {
+                                           loadingDialog.show()
+                                       }
+
+                                       Status.SUCCESS -> {
+                                           loadingDialog.dismiss()
+                                           if (it.data?.toInt() != -1) {
+                                               longToastShow(msg = "Note Updated!")
+                                           }
+                                       }
+
+                                       Status.ERROR -> {
+                                           loadingDialog.dismiss()
+                                           it.message?.let { it1 -> longToastShow(it1) }
+
+                                       }
+                                   }
+                               }
+                       }
+                  }
+               updateNoteDialog.show()
+              }
+        }
+        mainBinding.noteRV.adapter = noteRecyclerViewAdapter
+
+        callGetNoteList(noteRecyclerViewAdapter)
 
     }
 
-    private fun callGetNoteList() {
+    private fun callGetNoteList(noteRecyclerViewAdapter: NoteRecyclerViewAdapter) {
         loadingDialog.show()
         CoroutineScope(Dispatchers.Main).launch {
 

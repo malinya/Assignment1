@@ -35,12 +35,48 @@ class NoteRepository(application: Application) {
                 val result = noteDao.insertTask(note)
                 postValue(Success(result))
             }
-
         }catch (e: Exception){
             postValue(Error(e.message.toString()))
         }
+    }
 
+    fun deleteNote(note: Note) = MutableLiveData<Resource<Int>>().apply {
 
+        postValue(Loading())
+        try {
+            CoroutineScope(Dispatchers.IO).launch {
+                val result = noteDao.deleteNote(note)
+                postValue(Success(result))
+            }
+        }catch (e: Exception){
+            postValue(Error(e.message.toString()))
+        }
+    }
+
+    fun updateNote(note: Note) = MutableLiveData<Resource<Int>>().apply {
+
+        postValue(Loading())
+        try {
+            CoroutineScope(Dispatchers.IO).launch {
+                val result = noteDao.updateNote(note)
+                postValue(Success(result))
+            }
+        }catch (e: Exception){
+            postValue(Error(e.message.toString()))
+        }
+    }
+
+    fun updateNoteSpecificField(noteId:String, title:String, description:String) = MutableLiveData<Resource<Int>>().apply {
+
+        postValue(Loading())
+        try {
+            CoroutineScope(Dispatchers.IO).launch {
+                val result = noteDao.updateNoteSpecificField(noteId, title, description)
+                postValue(Success(result))
+            }
+        }catch (e: Exception){
+            postValue(Error(e.message.toString()))
+        }
     }
 
 }

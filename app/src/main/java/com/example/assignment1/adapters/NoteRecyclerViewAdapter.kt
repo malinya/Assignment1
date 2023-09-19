@@ -1,8 +1,10 @@
 package com.example.assignment1.adapters
 
 import android.view.LayoutInflater
+import android.view.ScrollCaptureCallback
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.assignment1.R
@@ -10,7 +12,10 @@ import com.example.assignment1.models.Note
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class NoteRecyclerViewAdapter: RecyclerView.Adapter<NoteRecyclerViewAdapter.ViewHolder>() {
+class NoteRecyclerViewAdapter(
+    private val deleteUpdateCallback: (type:String, position: Int, note: Note)-> Unit
+)
+    : RecyclerView.Adapter<NoteRecyclerViewAdapter.ViewHolder>() {
 
     private val noteList = arrayListOf<Note>()
 
@@ -18,6 +23,9 @@ class NoteRecyclerViewAdapter: RecyclerView.Adapter<NoteRecyclerViewAdapter.View
         val titleTxt : TextView = itemView.findViewById(R.id.titleTxt)
         val descrTxt : TextView = itemView.findViewById(R.id.descrTxt)
         val dateTxt : TextView = itemView.findViewById(R.id.dateTxt)
+
+        val deleteImg : ImageView = itemView.findViewById(R.id.deleteImg)
+        val editImg : ImageView = itemView.findViewById(R.id.editImg)
     }
 
     fun addAllNote(newNoteList: List<Note>){
@@ -44,6 +52,17 @@ class NoteRecyclerViewAdapter: RecyclerView.Adapter<NoteRecyclerViewAdapter.View
 
         val dateFormat = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss a", Locale.getDefault())
         holder.dateTxt.text = dateFormat.format(note.date)
+
+        holder.deleteImg.setOnClickListener{
+            if (holder.adapterPosition != -1){
+                deleteUpdateCallback("delete",holder.adapterPosition, note)
+            }
+        }
+        holder.editImg.setOnClickListener{
+            if (holder.adapterPosition != -1){
+                deleteUpdateCallback("update",holder.adapterPosition, note)
+            }
+        }
     }
 
     override fun getItemCount(): Int {

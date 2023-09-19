@@ -15,4 +15,16 @@ class NoteViewModel(application: Application) : AndroidViewModel(application) {
     fun insertTask(note: Note): MutableLiveData<Resource<Long>> {
         return noteRepository.insertTask(note)
     }
+
+    fun deleteNote(note: Note): MutableLiveData<Resource<Int>> {
+        return noteRepository.deleteNote(note)
+    }
+
+    fun updateNote(note: Note): MutableLiveData<Resource<Int>> {
+        return noteRepository.updateNote(note)
+    }
+
+    fun updateNoteSpecificField(noteId:String, title:String, description:String): MutableLiveData<Resource<Int>> {
+        return noteRepository.updateNoteSpecificField(noteId, title, description)
+    }
 }
