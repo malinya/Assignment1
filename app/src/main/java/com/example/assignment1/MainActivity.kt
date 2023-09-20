@@ -5,15 +5,21 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
+import android.view.inputmethod.EditorInfo
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
-import com.example.assignment1.adapters.NoteRecyclerViewAdapter
+import androidx.recyclerview.widget.RecyclerView
+//import androidx.room.Query
+import com.example.assignment1.adapters.NoteRVVBListAdapter
 import com.example.assignment1.databinding.ActivityMainBinding
 import com.example.assignment1.models.Note
 import com.example.assignment1.utils.Status
+import com.example.assignment1.utils.StatusResult
+import com.example.assignment1.utils.StatusResult.*
 import com.example.assignment1.utils.clearEditText
+import com.example.assignment1.utils.hideKeyboard
 import com.example.assignment1.utils.longToastShow
 import com.example.assignment1.utils.setupDialog
 import com.example.assignment1.utils.validateEditText
@@ -22,7 +28,8 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
+//import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Date
 import java.util.UUID
@@ -100,9 +107,6 @@ class MainActivity : AppCompatActivity() {
             if (validateEditText(addENTitle, addENTitleL)
                 && validateEditText(addENDesc, addENDescL)
             ) {
-                addNoteDialog.dismiss()
-                //Toast.makeText(this, "Validated!", Toast.LENGTH_LONG).show()
-                //loadingDialog.show()
 
                 val newNote = Note(
                     UUID.randomUUID().toString(),
@@ -110,24 +114,12 @@ class MainActivity : AppCompatActivity() {
                     addENDesc.text.toString().trim(),
                     Date()
                 )
-                noteViewModel.insertTask(newNote).observe(this){
-                    when(it.status){
-                        Status.LOADING -> {
-                            loadingDialog.show()
-                        }
-                        Status.SUCCESS ->{
-                            loadingDialog.dismiss()
-                            if (it.data?.toInt() != -1) {
-                                longToastShow(msg = "Note Added!")
-                            }
-                        }
-                        Status.ERROR -> {
-                            loadingDialog.dismiss()
-                            it.message?.let { it1 -> longToastShow(it1) }
+                hideKeyboard(it)
+                addNoteDialog.dismiss()
+                //Toast.makeText(this, "Validated!", Toast.LENGTH_LONG).show()
+                //loadingDialog.show()
 
-                        }
-                    }
-                }
+                noteViewModel.insertTask(newNote)
             }
         }
 
@@ -158,30 +150,10 @@ class MainActivity : AppCompatActivity() {
 
         //update note -------ends
 
-       val noteRecyclerViewAdapter = NoteRecyclerViewAdapter{ type, position, note ->
+       val noteRVVBListAdapter = NoteRVVBListAdapter{ type, position, note ->
            if(type == "delete") {
                noteViewModel
                    .deleteNote(note)
-                   .observe(this) {
-                       when (it.status) {
-                           Status.LOADING -> {
-                               loadingDialog.show()
-                           }
-
-                           Status.SUCCESS -> {
-                               loadingDialog.dismiss()
-                               if (it.data?.toInt() != -1) {
-                                   longToastShow(msg = "Note Deleted!")
-                               }
-                           }
-
-                           Status.ERROR -> {
-                               loadingDialog.dismiss()
-                               it.message?.let { it1 -> longToastShow(it1) }
-
-                           }
-                       }
-                   }
               }else if(type == "update"){
                   upENTitle.setText(note.title)
                   upENDesc.setText(note.description)
@@ -195,55 +167,108 @@ class MainActivity : AppCompatActivity() {
                                upENDesc.text.toString().trim(),
                                Date()
                            )
+                           hideKeyboard(it)
                            updateNoteDialog.dismiss()
-                           loadingDialog.show()
                            noteViewModel
                                .updateNote(updateNote)
-                               .observe(this) {
-                                   when (it.status) {
-                                       Status.LOADING -> {
-                                           loadingDialog.show()
-                                       }
 
-                                       Status.SUCCESS -> {
-                                           loadingDialog.dismiss()
-                                           if (it.data?.toInt() != -1) {
-                                               longToastShow(msg = "Note Updated!")
-                                           }
-                                       }
-
-                                       Status.ERROR -> {
-                                           loadingDialog.dismiss()
-                                           it.message?.let { it1 -> longToastShow(it1) }
-
-                                       }
-                                   }
-                               }
                        }
                   }
                updateNoteDialog.show()
               }
         }
-        mainBinding.noteRV.adapter = noteRecyclerViewAdapter
+        mainBinding.noteRV.adapter = noteRVVBListAdapter
 
-        callGetNoteList(noteRecyclerViewAdapter)
+        noteRVVBListAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver()
+        {
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                super.onItemRangeInserted(positionStart, itemCount)
+                mainBinding.noteRV.smoothScrollToPosition(positionStart)
+            }
+        })
+        callGetNoteList(noteRVVBListAdapter)
+
+        noteViewModel.getNoteList()
+        statusCallback()
+
+        callSearch()
 
     }
 
-    private fun callGetNoteList(noteRecyclerViewAdapter: NoteRecyclerViewAdapter) {
-        loadingDialog.show()
-        CoroutineScope(Dispatchers.Main).launch {
-
-            noteViewModel.getNoteList().collect {
+    private fun statusCallback(){
+        noteViewModel
+            .statusLiveData
+            .observe(this){
                 when (it.status) {
                     Status.LOADING -> {
                         loadingDialog.show()
                     }
 
                     Status.SUCCESS -> {
+                        loadingDialog.dismiss()
+                        when(it.data as StatusResult){
+                            Added -> {
+                                Log.d("StatusResult","Added")
+                            }
+                            Deleted ->{
+                                Log.d("StatusResult","Deleted")
+                            }
+                            Updated ->{
+                                Log.d("StatusResult","Updated")
+                            }
+                        }
+                        it.message?.let { it1 -> longToastShow(it1) }
+                    }
+
+                    Status.ERROR -> {
+                        loadingDialog.dismiss()
+                        it.message?.let { it1 -> longToastShow(it1) }
+
+                    }
+                }
+            }
+
+    }
+
+    private fun callSearch() {
+        mainBinding.edSearch.addTextChangedListener(object : TextWatcher{
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+            }
+
+            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+            }
+
+            override fun afterTextChanged(query: Editable) {
+                if(query.toString().isNotEmpty()){
+                    noteViewModel.searchNoteList(query.toString())
+                }else{
+                    noteViewModel.getNoteList()
+                }
+            }
+        })
+
+        mainBinding.edSearch.setOnEditorActionListener{v,actionId, event ->
+            if(actionId == EditorInfo.IME_ACTION_SEARCH){
+                return@setOnEditorActionListener true
+            }
+            false
+        }
+    }
+
+    private fun callGetNoteList(noteRecyclerViewAdapter: NoteRVVBListAdapter) {
+        CoroutineScope(Dispatchers.Main).launch {
+
+            noteViewModel.noteStateFlow
+                .collectLatest {
+                when (it.status) {
+                    Status.LOADING -> {
+                        loadingDialog.show()
+                    }
+
+                    Status.SUCCESS -> {
+                        loadingDialog.dismiss()
                         it.data?.collect {noteList ->
-                            loadingDialog.dismiss()
-                            noteRecyclerViewAdapter.addAllNote(noteList)
+                            noteRecyclerViewAdapter.submitList(noteList)
                         }
                     }
 
@@ -257,3 +282,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+

@@ -3,6 +3,7 @@ package com.example.assignment1.viewmodels
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
+import androidx.room.Query
 import com.example.assignment1.models.Note
 import com.example.assignment1.repository.NoteRepository
 import com.example.assignment1.utils.Resource
@@ -11,20 +12,29 @@ class NoteViewModel(application: Application) : AndroidViewModel(application) {
 
     private val noteRepository = NoteRepository(application)
 
-    fun getNoteList() = noteRepository.getNoteList()
-    fun insertTask(note: Note): MutableLiveData<Resource<Long>> {
-        return noteRepository.insertTask(note)
+    val noteStateFlow get() = noteRepository.noteStateFlow
+    val statusLiveData get() = noteRepository.statusLiveData
+
+    fun getNoteList() {
+        noteRepository.getNoteList()
+    }
+    fun insertTask(note: Note) {
+        noteRepository.insertTask(note)
     }
 
-    fun deleteNote(note: Note): MutableLiveData<Resource<Int>> {
-        return noteRepository.deleteNote(note)
+    fun deleteNote(note: Note) {
+         noteRepository.deleteNote(note)
     }
 
-    fun updateNote(note: Note): MutableLiveData<Resource<Int>> {
-        return noteRepository.updateNote(note)
+    fun updateNote(note: Note) {
+         noteRepository.updateNote(note)
     }
 
-    fun updateNoteSpecificField(noteId:String, title:String, description:String): MutableLiveData<Resource<Int>> {
-        return noteRepository.updateNoteSpecificField(noteId, title, description)
+    fun updateNoteSpecificField(noteId:String, title:String, description:String){
+         noteRepository.updateNoteSpecificField(noteId, title, description)
+    }
+
+    fun searchNoteList(query: String){
+        noteRepository.searchNoteList(query)
     }
 }

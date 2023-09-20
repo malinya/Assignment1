@@ -30,6 +30,7 @@
     </style>
 
     <style name="SearchInputLayout" parent="">
+        <item name="shapeAppearance">@style/RndShape</item>
         <item name="endIconMode">clear_text</item>
         <item name="errorIconDrawable">@null</item>
         <item name="errorEnabled">true</item>

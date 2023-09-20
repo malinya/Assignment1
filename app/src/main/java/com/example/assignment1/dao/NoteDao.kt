@@ -22,5 +22,7 @@ interface NoteDao {
     @Query("UPDATE Note SET noteTitle= :title, description= :description WHERE noteId = :noteId")
     suspend fun updateNoteSpecificField(noteId:String, title:String, description:String) : Int
 
+    @Query("SELECT * FROM Note WHERE noteTitle LIKE :query ORDER BY date DESC" )
+    fun searchNoteList(query:String) : Flow<List<Note>>
 
 }
