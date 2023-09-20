@@ -18,8 +18,8 @@ class NoteViewModel(application: Application) : AndroidViewModel(application) {
     fun getNoteList() {
         noteRepository.getNoteList()
     }
-    fun insertTask(note: Note) {
-        noteRepository.insertTask(note)
+    fun insertNote(note: Note) {
+        noteRepository.insertNote(note)
     }
 
     fun deleteNote(note: Note) {

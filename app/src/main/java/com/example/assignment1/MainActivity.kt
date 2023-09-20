@@ -119,7 +119,7 @@ class MainActivity : AppCompatActivity() {
                 //Toast.makeText(this, "Validated!", Toast.LENGTH_LONG).show()
                 //loadingDialog.show()
 
-                noteViewModel.insertTask(newNote)
+                noteViewModel.insertNote(newNote)
             }
         }
 

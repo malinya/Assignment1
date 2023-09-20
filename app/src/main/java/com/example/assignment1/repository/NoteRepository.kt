@@ -43,12 +43,12 @@ class NoteRepository(application: Application) {
         }
     }
 
-    fun insertTask(note: Note){
+    fun insertNote(note: Note){
 
         try {
             _statusLiveData.postValue(Loading())
             CoroutineScope(Dispatchers.IO).launch {
-                val result = noteDao.insertTask(note)
+                val result = noteDao.insertNote(note)
                 handleResult(result.toInt(), "Note Added Successfully", StatusResult.Added)
             }
         }catch (e: Exception){
