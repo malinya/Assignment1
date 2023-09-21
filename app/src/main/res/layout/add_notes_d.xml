@@ -79,8 +79,8 @@
                     android:background="#EAE4E8"
                     android:gravity="top|start"
                     android:inputType="textMultiLine"
-                    android:lines="10"
-                    android:maxLines="10" />
+                    android:lines="15"
+                    android:maxLines="15" />
 
             </com.google.android.material.textfield.TextInputLayout>
 
